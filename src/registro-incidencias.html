@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escuela Bachiller Rafael Francisco Osejo</title>
+    <!-- Agregar Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .modal.show {
+            display: block;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .modal.hide {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1050;
+            display: none;
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1040;
+            display: none;
+        }
+        .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        #employeeTable td:nth-child(1),
+        #employeeTable td:nth-child(2) {
+            cursor: pointer;
+        }
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #f1f1f1;
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            font-size: 14px;
+            color: #555;
+        }
+        #incidentDate {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center my-4">Registro de Incidencias</h1>
+        <h2 id="employeeNameHeader" class="text-center"></h2>
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#incidentModal">
+            Registrar Incidencia
+        </button>
+        <div class="modal fade" id="incidentModal" tabindex="-1" aria-labelledby="incidentModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="incidentModalLabel">Registrar Incidencia</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="incidentForm">
+                            <div class="form-group">
+                                <label for="incidentType">Tipo de Incidencia:</label>
+                                <select id="incidentType" class="form-control" required>
+                                    <option value="Ausencia justificada">Ausencia justificada</option>
+                                    <option value="Ausencia injustificada">Ausencia injustificada</option>
+                                    <option value="Tardía justificada">Tardía justificada</option>
+                                    <option value="Tardía injustificada">Tardía injustificada</option>
+                                    <option value="Incapacidad">Incapacidad</option>
+                                    <option value="Licencia">Licencia</option>
+                                    <option value="Traslado">Traslado</option>
+                                    <option value="Ingreso al C.E.">Ingreso al C.E.</option>
+                                    <option value="Otro detalle">Otro detalle</option>
+                                    <option value="Permiso personal">Permiso personal</option>
+                                    <option value="Amonestación verbal">Amonestación verbal</option>
+                                    <option value="Amonestación escrita">Amonestación escrita</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="incidentDescription">Descripción de la Incidencia:</label>
+                                <textarea id="incidentDescription" class="form-control" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="incidentStartDate">Fecha Rige:</label>
+                                <input type="date" id="incidentStartDate" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="incidentEndDate">Fecha Vence:</label>
+                                <input type="date" id="incidentEndDate" class="form-control">
+                            </div>
+                            <input type="hidden" id="incidentDate">
+                            <button type="submit" class="btn btn-primary">Guardar Incidencia</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <h2 class="my-4">Incidencias Registradas</h2>
+        <h3 id="employeeNameTable"></h3>
+        <h4 id="employeeidTable"></h4>
+        <table id="incidentTable" class="table table-bordered text-center">
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Descripción</th>
+                    <th>Fecha Rige</th>
+                    <th>Fecha Vence</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Las incidencias se insertarán dinámicamente aquí -->
+            </tbody>
+        </table>
+        <button class="btn btn-secondary" onclick="printIncidents()">Imprimir</button>
+        <button class="btn btn-secondary" onclick="goBack()">Regresar</button>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const employeeName = localStorage.getItem('currentEmployee');
+            document.getElementById('employeeNameHeader').innerText = employeeName;
+            const employeeId = localStorage.getItem('currentEmployeeId');
+            document.getElementById('employeeidTable').innerText = employeeId;
+            document.getElementById('employeeNameTable').innerText = employeeName;
+
+            const incidentForm = document.getElementById('incidentForm');
+            incidentForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const type = document.getElementById('incidentType').value;
+                const description = document.getElementById('incidentDescription').value;
+                const startDate = document.getElementById('incidentStartDate').value;
+                const endDate = document.getElementById('incidentEndDate').value;
+                const date = new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const incidents = JSON.parse(localStorage.getItem(employeeName + '_incidents')) || [];
+                incidents.push({ type, description, startDate, endDate, date });
+                localStorage.setItem(employeeName + '_incidents', JSON.stringify(incidents));
+                document.getElementById('incidentDescription').value = '';
+                document.getElementById('incidentStartDate').value = '';
+                document.getElementById('incidentEndDate').value = '';
+                $('#incidentModal').modal('hide');
+                loadIncidents();
+            });
+
+            loadIncidents();
+        });
+
+        function loadIncidents() {
+            const employeeName = localStorage.getItem('currentEmployee');
+            const incidents = JSON.parse(localStorage.getItem(employeeName + '_incidents')) || [];
+            const tbody = document.getElementById('incidentTable').getElementsByTagName('tbody')[0];
+            tbody.innerHTML = '';
+            incidents.forEach((incident, index) => {
+                const row = tbody.insertRow();
+                const cellType = row.insertCell(0);
+                const cellDescription = row.insertCell(1);
+                const cellStartDate = row.insertCell(2);
+                const cellEndDate = row.insertCell(3);
+                const cellDate = row.insertCell(4);
+                const cellActions = row.insertCell(5);
+                cellType.innerText = incident.type;
+                cellDescription.innerText = incident.description;
+                cellStartDate.innerText = new Date(incident.startDate + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                cellEndDate.innerText = new Date(incident.endDate + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                cellDate.innerText = incident.date;
+                cellActions.innerHTML = `<button class="btn btn-warning btn-sm" onclick="editIncident(${index})">Editar</button> <button class="btn btn-success btn-sm" style="display:none;" onclick="saveIncident(${index})">Guardar</button>`;
+            });
+        }
+
+        function editIncident(index) {
+            const employeeName = localStorage.getItem('currentEmployee');
+            const incidents = JSON.parse(localStorage.getItem(employeeName + '_incidents'));
+            const incident = incidents[index];
+            const row = document.getElementById('incidentTable').rows[index + 1];
+            row.cells[0].innerHTML = `<select id="editType${index}" class="form-control">
+                <option value="Ausencia justificada" ${incident.type === 'Ausencia justificada' ? 'selected' : ''}>Ausencia justificada</option>
+                <option value="Ausencia injustificada" ${incident.type === 'Ausencia injustificada' ? 'selected' : ''}>Ausencia injustificada</option>
+                <option value="Tardía justificada" ${incident.type === 'Tardía justificada' ? 'selected' : ''}>Tardía justificada</option>
+                <option value="Tardía injustificada" ${incident.type === 'Tardía injustificada' ? 'selected' : ''}>Tardía injustificada</option>
+                <option value="Incapacidad" ${incident.type === 'Incapacidad' ? 'selected' : ''}>Incapacidad</option>
+                <option value="Licencia" ${incident.type === 'Licencia' ? 'selected' : ''}>Licencia</option>
+                <option value="Traslado" ${incident.type === 'Traslado' ? 'selected' : ''}>Traslado</option>
+                <option value="Ingreso al C.E." ${incident.type === 'Ingreso al C.E.' ? 'selected' : ''}>Ingreso al C.E.</option>
+                <option value="Otro detalle" ${incident.type === 'Otro detalle' ? 'selected' : ''}>Otro detalle</option>
+                <option value="Permiso personal" ${incident.type === 'Permiso personal' ? 'selected' : ''}>Permiso personal</option>
+                <option value="Amonestación verbal" ${incident.type === 'Amonestación verbal' ? 'selected' : ''}>Amonestación verbal</option>
+                <option value="Amonestación escrita" ${incident.type === 'Amonestación escrita' ? 'selected' : ''}>Amonestación escrita</option>
+            </select>`;
+            row.cells[1].innerHTML = `<textarea id="editDescription${index}" class="form-control">${incident.description}</textarea>`;
+            row.cells[2].innerHTML = `<input type="date" id="editStartDate${index}" class="form-control" value="${incident.startDate}">`;
+            row.cells[3].innerHTML = `<input type="date" id="editEndDate${index}" class="form-control" value="${incident.endDate}">`;
+            row.cells[5].children[0].style.display = 'none';
+            row.cells[5].children[1].style.display = 'inline';
+        }
+
+        function saveIncident(index) {
+            const employeeName = localStorage.getItem('currentEmployee');
+            const incidents = JSON.parse(localStorage.getItem(employeeName + '_incidents'));
+            incidents[index].type = document.getElementById(`editType${index}`).value;
+            incidents[index].description = document.getElementById(`editDescription${index}`).value;
+            incidents[index].startDate = document.getElementById(`editStartDate${index}`).value;
+            incidents[index].endDate = document.getElementById(`editEndDate${index}`).value;
+            localStorage.setItem(employeeName + '_incidents', JSON.stringify(incidents));
+            loadIncidents();
+        }
+
+        function printIncidents() {
+            const printContent = document.getElementById('incidentTable').outerHTML;
+            const employeeName = document.getElementById('employeeNameTable').outerHTML;
+            const title = '<h2>Incidencias Registradas</h2>';
+            const originalContent = document.body.innerHTML;
+            document.body.innerHTML = employeeName + title + printContent;
+            window.print();
+            document.body.innerHTML = originalContent;
+            location.reload();
+        }
+
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+
+        function importData(data) {
+            const employeeName = localStorage.getItem('currentEmployee');
+            const existingIncidents = JSON.parse(localStorage.getItem(employeeName + '_incidents')) || [];
+            const newIncidents = JSON.parse(data);
+            const uniqueIncidents = newIncidents.filter(newIncident => 
+                !existingIncidents.some(existingIncident => existingIncident.id === newIncident.id)
+            );
+            const updatedIncidents = existingIncidents.concat(uniqueIncidents);
+            localStorage.setItem(employeeName + '_incidents', JSON.stringify(updatedIncidents));
+            loadIncidents();
+        }
+    </script>
+</body>
+</html>
